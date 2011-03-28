@@ -5,7 +5,7 @@
 ;; Author: Sebastien Gross <seb•ɑƬ•chezwam•ɖɵʈ•org>
 ;; Keywords: gnus, identities
 ;; Created: 2010-11-29
-;; Last changed: 2010-11-29 16:37:09
+;; Last changed: 2011-03-28 09:52:17
 ;; Licence: WTFPL, grab your copy here: http://sam.zoy.org/wtfpl/
 
 ;; This file is NOT part of GNU Emacs.
@@ -16,7 +16,9 @@
 
 ;;; Code:
 
-(defcustom gnus-identities-preserve-headers '("To" "Subject" "Gcc")
+(require 'message)
+
+(defcustom gnus-identities-preserve-headers '("To" "Subject" "Gcc" "Cc")
   "List of header to preserve when changing identity using
 `gnus-identities-change'.
 Please note that all other headers would be removed.
