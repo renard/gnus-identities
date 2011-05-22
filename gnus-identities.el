@@ -5,7 +5,7 @@
 ;; Author: Sebastien Gross <seb•ɑƬ•chezwam•ɖɵʈ•org>
 ;; Keywords: gnus, identities
 ;; Created: 2010-11-29
-;; Last changed: 2011-03-28 09:52:17
+;; Last changed: 2011-05-22 23:17:58
 ;; Licence: WTFPL, grab your copy here: http://sam.zoy.org/wtfpl/
 
 ;; This file is NOT part of GNU Emacs.
@@ -64,15 +64,9 @@ An identity is defined by 'identity symbol."
   (save-excursion
     (save-restriction
       (beginning-of-buffer)
-      (let ((ret nil))
-	(when
-	    (re-search-forward  "^\\([^:]+\\):" (point-at-eol) t)
-	  (add-to-list 'ret (substring-no-properties (match-string 1))))
-	(while (message-next-header)
-	    (when
-		(re-search-forward "^\\([^:]+\\):" (point-at-eol) t)
-	      (add-to-list 'ret (substring-no-properties (match-string 1)))))
-	ret))))
+      (mapcar (lambda (x)
+		(symbol-name (car x)))
+	      (mail-header-extract-no-properties)))))
 
 
 (defun gnus-identities-change (id)
@@ -103,27 +97,27 @@ could be something like:
 
   (save-excursion
     (save-restriction
+      (let ((giph (mapcar 'downcase gnus-identities-preserve-headers)))
+	;; remove all headers
+	(mapcar '(lambda (h)
+		   (unless (member h giph)
+		     (message-remove-header h)))
+		(gnus-identities-message-list-headers))
 
-      ;; remove all headers
-      (mapcar '(lambda (h)
-		 (unless (member h gnus-identities-preserve-headers)
-		   (message-remove-header h)))
-	      (gnus-identities-message-list-headers))
+	;; remove signature
+	(end-of-buffer)
+	(when (re-search-backward message-signature-separator nil t)
+	  (delete-region (1- (point)) (point-max)))
 
-      ;; remove signature
-      (end-of-buffer)
-      (when (re-search-backward message-signature-separator nil t)
-	(delete-region (1- (point)) (point-max)))
-
-      ;; Insert headers
-      (let ((gnus-posting-styles `((".*" ,@(gnus-identities-get-id id))))
-	    (message-setup-hook nil))
-	(mapcar '(lambda (x)
-		   (when (functionp x)
-		     (funcall x)))
-		(gnus-configure-posting-styles gnus-newsgroup-name)))
-      ;; Remove identity header
-      (message-remove-header "x-identity"))))
+	;; Insert headers
+	(let ((gnus-posting-styles `((".*" ,@(gnus-identities-get-id id))))
+	      (message-setup-hook nil))
+	  (mapcar '(lambda (x)
+		     (when (functionp x)
+		       (funcall x)))
+		  (gnus-configure-posting-styles gnus-newsgroup-name)))
+	;; Remove identity header
+	(message-remove-header "x-identity")))))
 	     
 (add-hook 'message-setup-hook '(lambda () (message-remove-header "x-identity")))
 (define-key message-mode-map "\C-c\C-p" 'gnus-identities-change)
