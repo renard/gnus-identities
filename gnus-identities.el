@@ -5,7 +5,7 @@
 ;; Author: Sebastien Gross <seb•ɑƬ•chezwam•ɖɵʈ•org>
 ;; Keywords: gnus, identities
 ;; Created: 2010-11-29
-;; Last changed: 2011-05-22 23:17:58
+;; Last changed: 2011-05-23 11:44:20
 ;; Licence: WTFPL, grab your copy here: http://sam.zoy.org/wtfpl/
 
 ;; This file is NOT part of GNU Emacs.
@@ -116,6 +116,23 @@ could be something like:
 		     (when (functionp x)
 		       (funcall x)))
 		  (gnus-configure-posting-styles gnus-newsgroup-name)))
+
+	;; Remove sender address (read in the from field) from To, Cc Bcc
+	;; fields.
+	(let ((from (cadr (mail-extract-address-components
+			   (message-fetch-field "from")))))
+	  (dolist (field '("to" "cc" "bcc"))
+	    (when (mail-fetch-field field)
+	      (message "%s: %s" field (mail-fetch-field field))
+	      (message-position-on-field field)
+	      (when (search-backward from (point-at-bol) t)
+		(when (search-backward-regexp ":\\|, " (point-at-bol) t)
+		  (forward-char)
+		  (forward-char)
+		  (message-kill-address)
+		  (message "%s: %s" field (mail-fetch-field field))
+		  )))))
+	    
 	;; Remove identity header
 	(message-remove-header "x-identity")))))
 	     
