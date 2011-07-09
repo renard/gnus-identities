@@ -5,7 +5,7 @@
 ;; Author: Sebastien Gross <seb•ɑƬ•chezwam•ɖɵʈ•org>
 ;; Keywords: gnus, identities
 ;; Created: 2010-11-29
-;; Last changed: 2011-05-23 11:44:20
+;; Last changed: 2011-07-09 02:04:27
 ;; Licence: WTFPL, grab your copy here: http://sam.zoy.org/wtfpl/
 
 ;; This file is NOT part of GNU Emacs.
@@ -16,7 +16,7 @@
 
 ;;; Code:
 
-(require 'message)
+(eval-when-compile (require 'message))
 
 (defcustom gnus-identities-preserve-headers '("To" "Subject" "Gcc" "Cc")
   "List of header to preserve when changing identity using
@@ -116,26 +116,18 @@ could be something like:
 		     (when (functionp x)
 		       (funcall x)))
 		  (gnus-configure-posting-styles gnus-newsgroup-name)))
-
-	;; Remove sender address (read in the from field) from To, Cc Bcc
-	;; fields.
-	(let ((from (cadr (mail-extract-address-components
-			   (message-fetch-field "from")))))
-	  (dolist (field '("to" "cc" "bcc"))
-	    (when (mail-fetch-field field)
-	      (message "%s: %s" field (mail-fetch-field field))
-	      (message-position-on-field field)
-	      (when (search-backward from (point-at-bol) t)
-		(when (search-backward-regexp ":\\|, " (point-at-bol) t)
-		  (forward-char)
-		  (forward-char)
-		  (message-kill-address)
-		  (message "%s: %s" field (mail-fetch-field field))
-		  )))))
 	    
 	;; Remove identity header
 	(message-remove-header "x-identity")))))
-	     
+
+(defadvice gnus-summary-followup
+  (before gnus-identities:gnus-summary-followup activate)
+  "Configure `message-dont-reply-to-names' according to `gnus-posting-styles'."
+  (setq message-dont-reply-to-names
+	(loop for g in gnus-posting-styles
+	      collect (cadr (assoc 'address (cdr g ))))))
+
+
 (add-hook 'message-setup-hook '(lambda () (message-remove-header "x-identity")))
 (define-key message-mode-map "\C-c\C-p" 'gnus-identities-change)
 
