@@ -16,7 +16,7 @@
 
 ;;; Code:
 
-(eval-when-compile (require 'message))
+(require 'message)
 
 (defcustom gnus-identities-preserve-headers '("To" "Subject" "Gcc" "Cc")
   "List of header to preserve when changing identity using
